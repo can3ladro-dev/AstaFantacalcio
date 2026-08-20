@@ -70,6 +70,7 @@ td.td-act{text-align:center;width:42px}
 .btn.gold .btn-label{color:#5c4a14}
 .btn.danger:hover{border-color:var(--red);color:var(--red)}
 .btn.danger:hover .btn-label{color:var(--red)}
+.btn.active{background:rgba(242,201,76,.15);border-color:var(--gold);color:var(--gold)}
 
 .tabs{display:flex;gap:5px;overflow-x:auto;position:sticky;top:0;z-index:60;margin:6px -22px 24px;padding:4px 22px;
   background:linear-gradient(rgba(11,23,18,.96),rgba(11,23,18,.88));backdrop-filter:blur(5px);border-bottom:1px solid var(--line)}
@@ -437,6 +438,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .picker-item .pi-team{color:var(--mut);font-size:12px;margin-left:auto}
 .picker-item .pi-note{font-size:11.5px;color:var(--mut);font-style:italic;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .picker-item .pi-used{font-size:10.5px;color:var(--orange);font-family:var(--display);letter-spacing:.6px;text-transform:uppercase;flex:none;align-self:center}
+.picker-item .pi-used[style*="background"]{color:#fff!important}
 .picker-item .pi-price{font-family:var(--mono);font-weight:700;color:var(--gold);min-width:56px;text-align:right;flex:none;align-self:center}
 .picker-empty{color:var(--mut);text-align:center;padding:34px 16px;font-style:italic}
 @media (max-width:900px){
@@ -731,6 +733,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
       <select id="squadSelect"></select>
       <button class="btn danger" id="btnDelSquad">🗑 Elimina</button>
 	  <button class="btn" id="btnSquadToObi" title="Aggiunge i calciatori della squadra attuale agli Obiettivi (Foglio 5), saltando quelli già presenti">🎯 Aggiungi agli Obiettivi</button>
+	  <button class="btn" id="btnToggleAstaInfo" title="Mostra/nascondi informazioni asta (calciatori già presi)">👁 Info Asta</button>
     </div>
     <div id="squadEditor"></div>
   </div>
@@ -2130,6 +2133,8 @@ function renderPickerList(){
   const all=sq.slots.concat(sq.bench||[]);
   const used=new Set(all.map(s=>s.name).filter(n=>n&&n!==cur).map(n=>n.trim().toLowerCase()));
   const q=($('#pickerSearch').value||'').trim().toLowerCase();
+  const showAsta=$('#btnToggleAstaInfo')?.classList.contains('active');
+  const{acquired}=showAsta?computeCardStates():{acquired:null};
   let players=S.listone
     .filter(p=>p.r===role)
     .filter(p=>!q||p.n.toLowerCase().includes(q)||(p.s||'').toLowerCase().includes(q))
@@ -2153,13 +2158,20 @@ function renderPickerList(){
     const sel=cur===p.n;
     const isUsed=used.has(p.n.trim().toLowerCase());
     const note=p.note||'';
-    return '<div class="picker-item'+(sel?' selected':'')+(isUsed?' used':'')+'" data-name="'+esc(p.n)+'"'+(isUsed?' data-disabled="1"':'')+' title="'+esc(note)+'">'
+    const acq=acquired?acquired.get(p.n.trim().toLowerCase()):null;
+    let statusHtml='';
+    if(acq){
+      statusHtml=acq.isMe?'<span class="pi-used" style="background:var(--green);color:#fff;">✓ '+esc(acq.team)+'</span>':'<span class="pi-used">⚠ '+esc(acq.team)+'</span>';
+    }else if(isUsed){
+      statusHtml='<span class="pi-used">già in rosa</span>';
+    }
+    return '<div class="picker-item'+(sel?' selected':'')+(isUsed&&!acq?' used':'')+'" data-name="'+esc(p.n)+'"'+(isUsed&&!acq?' data-disabled="1"':'')+' title="'+esc(note)+'">'
       +'<span class="roltag" style="--rc:'+RINFO[role].c+'">'+role+'</span>'
       +'<span class="pi-body">'
       +'<span class="pi-top"><span class="pi-name">'+esc(p.n)+'</span><span class="pi-team">'+esc(p.s||'')+'</span></span>'
       +(note?'<span class="pi-note">'+esc(note)+'</span>':'')
       +'</span>'
-      +(isUsed?'<span class="pi-used">già in rosa</span>':'')
+      +statusHtml
       +'<span class="pi-price">'+(pp?fN(pp)+' cr':'—')+'</span>'
       +'</div>';
   }).join('');
@@ -2232,6 +2244,10 @@ sqEd.addEventListener('click',e=>{
 });
 $('#pickerSearch').addEventListener('input',renderPickerList);
 $('#pickerClose').addEventListener('click',closePicker);
+$('#btnToggleAstaInfo').addEventListener('click',function(){
+  this.classList.toggle('active');
+  renderPickerList();
+});
 $('#pickerModal').addEventListener('click',e=>{
   if(e.target===$('#pickerModal')){closePicker();return;}
   const it=e.target.closest('.picker-item');
