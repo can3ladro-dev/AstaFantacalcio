@@ -928,6 +928,7 @@ function renderRiepilogo(st){
   h+='</tr></thead><tbody>';
   for(let t=0;t<n;t++){
     const row=st[t], rim=(+c.crediti||0)-row.sp;
+    const spentPct=c.crediti>0?(row.sp/c.crediti*100):0;
     let libSum=0,libC='',spC='';
     ROLES.forEach(r=>{
       const lib=(+c.slot[r]||0)-row.cnt[r];
@@ -938,7 +939,9 @@ function renderRiepilogo(st){
       else if(lib<=2) cls+='slot-sem-orange';
       else cls+='slot-sem-green';
       libC+='<td class="'+cls+'">'+lib+'</td>';
-      spC+='<td class="num">'+(row.per[r]?fN(row.per[r]):'<span class="dim">·</span>')+'</td>';
+      const repSpent=row.per[r]||0;
+      const repPct=c.crediti>0?(repSpent/c.crediti*100):0;
+      spC+='<td class="num">'+(row.per[r]?fN(row.per[r])+' <small style="color:var(--mut)">('+fD(repPct,1)+'%)</small>':'<span class="dim">·</span>')+'</td>';
     });
     const danger=rim<0||(libSum>0&&rim<libSum);
     const bar=ROLES.map(r=>{const w=Math.min(100,row.per[r]/Math.max(1,+c.crediti)*100);
@@ -954,13 +957,14 @@ function renderRiepilogo(st){
       '<td class="rn">'+(t+1)+'</td>'+
       '<td class="name"><input class="team-in" data-team="'+t+'" value="'+esc(teamName(t))+'"></td>'+
       '<td class="num">'+fN(c.crediti)+'</td>'+
-      '<td class="num"><b>'+fN(row.sp)+'</b></td>'+
+      '<td class="num"><b>'+fN(row.sp)+'</b> <small style="color:var(--mut)">('+fD(spentPct,1)+'%)</small></td>'+
       '<td><div class="sbar" style="padding:6px 10px">'+bar+'</div></td>'+
       '<td class="num big '+(danger?'danger ':'')+semClass+'">'+fN(rim)+'</td>'+spC+libC+'</tr>';
   }
   const tot=st.reduce((a,t)=>a+t.sp,0);
+  const totPct=((+c.crediti||0)*n)>0?(tot/((+c.crediti||0)*n)*100):0;
   h+='<tr class="tot"><td class="rn">Σ</td><td style="padding:8px 10px">TOTALE LEGA</td>'+
-    '<td class="num">'+fN((+c.crediti||0)*n)+'</td><td class="num"><b>'+fN(tot)+'</b></td><td></td>'+
+    '<td class="num">'+fN((+c.crediti||0)*n)+'</td><td class="num"><b>'+fN(tot)+'</b> <small style="color:var(--mut)">('+fD(totPct,1)+'%)</small></td><td></td>'+
     '<td class="num big">'+fN((+c.crediti||0)*n-tot)+'</td>';
   ROLES.forEach(r=>h+='<td class="num">'+fN(st.reduce((a,t)=>a+t.per[r],0))+'</td>');
   ROLES.forEach(r=>h+='<td class="num">'+((+c.slot[r]||0)*n-st.reduce((a,t)=>a+t.cnt[r],0))+'</td>');
@@ -999,26 +1003,31 @@ function renderRoseSquadre(st){
 }
 function renderRosa(st){
   const c=S.config, me=st[0]||{sp:0,per:{P:0,D:0,C:0,A:0},cnt:{P:0,D:0,C:0,A:0}};
+  const budget=+c.crediti||500;
   const rim=(+c.crediti||0)-me.sp, totSlot=rosaTot();
   const presi=ROLES.reduce((a,r)=>a+me.cnt[r],0);
+  const rimPct=budget>0?(rim/budget*100):0;
+  const spentPct=budget>0?(me.sp/budget*100):0;
   $('#rosaName').textContent='Rosa '+(teamName(0)||'Io');
   $('#rosaSum').innerHTML='<div class="rosa-sum">'+
-    '<div><div class="lbl">Crediti rimanenti · '+esc(teamName(0))+'</div><div class="big-cr">'+fN(rim)+' <small style="font-size:15px;color:var(--mut)">cr.</small></div></div>'+
+    '<div><div class="lbl">Crediti rimanenti · '+esc(teamName(0))+'</div><div class="big-cr">'+fN(rim)+' <small style="font-size:15px;color:var(--mut)">cr.</small> <small style="color:var(--mut)">('+fD(rimPct,1)+'%)</small></div></div>'+
     '<div class="meter"><div class="lbl">Giocatori acquistati</div>'+
     '<div class="track"><i style="width:'+Math.min(100,presi/Math.max(1,totSlot)*100)+'%"></i></div>'+
-    '<div class="cap"><span>'+presi+' / '+totSlot+' slot</span><span>spesi '+fN(me.sp)+' cr.</span></div></div></div>';
+    '<div class="cap"><span>'+presi+' / '+totSlot+' slot</span><span>spesi '+fN(me.sp)+' cr ('+fD(spentPct,1)+'%)</span></div></div></div>';
   const mine=S.log.filter(r=>filled(r)&&(Math.trunc(+r.da)||0)===0);
   let h='';
   for(const r of ROLES){
     const players=mine.filter(x=>x.r===r);
     const slot=+c.slot[r]||0, used=players.length, miss=Math.max(0,slot-used);
     const pips=Array.from({length:Math.max(slot,used)},(_,k)=>'<span class="pip '+(k<used?'on':'')+'"></span>').join('');
-    const chips=players.map(x=>'<div class="chip-player"><span><b>'+esc(x.n)+'</b><em>'+esc(x.s)+'</em></span><span class="pr" style="color:'+RINFO[r].c+'">'+fN(x.p)+' cr</span></div>').join('')
+    const chips=players.map(x=>'<div class="chip-player"><span><b>'+esc(x.n)+'</b><em>'+esc(x.s)+'</em></span><span class="pr" style="color:'+RINFO[r].c+'">'+fN(x.p)+' cr <small style="color:var(--mut)">('+fD(budget>0?(x.p/budget*100):0,1)+'%)</small></span></div>').join('')
       ||'<div class="empty-slot">Nessun acquisto registrato</div>';
+    const repSpent=me.per[r]||0;
+    const repPct=budget>0?(repSpent/budget*100):0;
     h+='<section class="rep" style="--rc:'+RINFO[r].c+'">'+
       '<header><h3>'+RINFO[r].lab+' <span class="roltag" style="--rc:'+RINFO[r].c+'">'+r+'</span></h3><div class="pips">'+pips+'</div></header>'+
       '<div class="rep-meta"><span>Slot <b>'+Math.min(used,slot)+'/'+slot+'</b>'+(miss?' · ne mancano '+miss:' · reparto completo ✓')+'</span>'+
-      '<span>Subtotale <b>'+fN(me.per[r])+'</b> cr</span></div>'+chips+'</section>';
+      '<span>Subtotale <b>'+fN(repSpent)+'</b> cr <small style="color:var(--mut)">('+fD(repPct,1)+'%)</small></span></div>'+chips+'</section>';
   }
   $('#rosaWrap').innerHTML=h;
 }
@@ -1423,8 +1432,9 @@ function renderCardSearch(query='',role=''){
     let badges='';
     if(p.manual) badges+='<span class="card-status-badge badge-manual">MANUALE</span>';
     if(acq){
-      if(acq.isMe) badges+='<span class="card-status-badge badge-me">✓ IN ROSA <span style="opacity:.7;font-weight:400">('+fN(acq.price)+' cr)</span></span>';
-      else badges+='<span class="card-status-badge badge-other">⚠ '+esc(acq.team)+' <span style="opacity:.7;font-weight:400">('+fN(acq.price)+' cr)</span></span>';
+      const pricePct=S.config.crediti>0?fD((acq.price/S.config.crediti)*100,1):'0.0';
+      if(acq.isMe) badges+='<span class="card-status-badge badge-me">✓ IN ROSA <span style="opacity:.7;font-weight:400">('+fN(acq.price)+' cr / '+pricePct+'%)</span></span>';
+      else badges+='<span class="card-status-badge badge-other">⚠ '+esc(acq.team)+' <span style="opacity:.7;font-weight:400">('+fN(acq.price)+' cr / '+pricePct+'%)</span></span>';
     }
     if(isTarget) badges+='<span class="card-status-badge badge-target">🎯 OBIETTIVO</span>';
 
@@ -1432,7 +1442,9 @@ function renderCardSearch(query='',role=''){
     if(p.qtA) stats.push('<span class="card-stat">Qt.A <b>'+p.qtA+'</b></span>');
     if(p.qtI) stats.push('<span class="card-stat">Qt.I <b>'+p.qtI+'</b></span>');
     if(p.fvm) stats.push('<span class="card-stat">FVM <b>'+p.fvm+'</b></span>');
-    stats.push('<span class="pp-inline"><label>MAX</label><input type="number" class="pp-input" data-key="'+esc(key)+'" min="0" step="1" placeholder="—" value="'+esc(p.pp||'')+'"></span>');
+    const ppVal=p.pp||'';
+    const ppPct=ppVal&&S.config.crediti>0?fD((+ppVal/S.config.crediti)*100,1):'';
+    stats.push('<span class="pp-inline"><label>MAX</label><input type="number" class="pp-input" data-key="'+esc(key)+'" min="0" step="1" placeholder="—" value="'+esc(ppVal)+'">'+(ppPct?'<span style="color:var(--mut);font-size:9px;margin-left:3px;font-family:var(--display);font-weight:700">'+ppPct+'%</span>':'')+'</span>');
 
     const cardKey=esc(key);
     const hasNote=!!p.note && p.note.trim()!=='';
@@ -2081,10 +2093,15 @@ function squadSpent(sq){
   return sum;
 }
 function squadByRole(sq){
+  const budget=+S.config.crediti||500;
   const b={P:0,D:0,C:0,A:0};
   sq.slots.forEach(s=>{if(s.name)b[s.role]+=getPP(s.name);});
   (sq.bench||[]).forEach(s=>{if(s.name)b[s.role]+=getPP(s.name);});
-  return ROLES.map(r=>'<span style="color:'+RINFO[r].c+'">'+r+' <b style="color:var(--txt)">'+fN(b[r])+'</b></span>').join('');
+  return ROLES.map(r=>{
+    const pct=budget>0?(b[r]/budget*100):0;
+    const pctClass=pct>40?'neg':(pct>25?'':'zero');
+    return '<span style="color:'+RINFO[r].c+'">'+r+' <b style="color:var(--txt)">'+fN(b[r])+'</b> <small class="'+pctClass+'" style="color:var(--mut)">('+fD(pct,1)+'%)</small></span>';
+  }).join('');
 }
 function renderSquadSelector(){
   if(!Array.isArray(S.squads))S.squads=[];
@@ -2095,12 +2112,14 @@ function renderSquadSelector(){
 }
 function renderPitchRow(sq,role,count){
   const off=roleOffset(sq.module,role);const ri=RINFO[role];
+  const budget=+S.config.crediti||500;
   const showAsta=$('#btnToggleAstaInfo')?.classList.contains('active');
   const{acquired}=showAsta?computeCardStates():{acquired:null};
   let h='<div class="pitch-row">';
   for(let i=0;i<count;i++){
     const slot=sq.slots[off+i];const nm=slot?slot.name:'';
     const filled=!!nm;const price=filled?getPP(nm):0;
+    const pct=budget>0?(price/budget*100):0;
     const acq=filled&&acquired?acquired.get(nm.trim().toLowerCase()):null;
     let badgeHtml='';
     if(acq){
@@ -2114,7 +2133,7 @@ function renderPitchRow(sq,role,count){
     h+='<button type="button" class="slot-token'+(filled?' filled':'')+(acq?' has-badge':'')+'" data-zone="field" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
     if(filled){
       h+='<span class="st-name">'+esc(nm)+'</span>';
-      h+='<span class="st-price">'+(price?fN(price)+' cr':'—')+'</span>';
+      h+='<span class="st-price">'+(price?fN(price)+' cr <small style="color:var(--mut)">('+fD(pct,1)+'%)</small>':'—')+'</span>';
       if(badgeHtml) h+=badgeHtml;
     }else{
       h+='<span class="st-empty">'+role+'</span>';
@@ -2135,6 +2154,7 @@ function renderPitch(sq){
 }
 function renderBenchRow(sq,role,count){
   const off=benchRoleOffset(sq.module,role);const ri=RINFO[role];
+  const budget=+S.config.crediti||500;
   const showAsta=$('#btnToggleAstaInfo')?.classList.contains('active');
   const{acquired}=showAsta?computeCardStates():{acquired:null};
   let h='<div class="bench-row">';
@@ -2143,6 +2163,7 @@ function renderBenchRow(sq,role,count){
   for(let i=0;i<count;i++){
     const slot=(sq.bench||[])[off+i];const nm=slot?slot.name:'';
     const filled=!!nm;const price=filled?getPP(nm):0;
+    const pct=budget>0?(price/budget*100):0;
     const acq=filled&&acquired?acquired.get(nm.trim().toLowerCase()):null;
     let badgeHtml='';
     if(acq){
@@ -2156,7 +2177,7 @@ function renderBenchRow(sq,role,count){
     h+='<button type="button" class="slot-token bench-token'+(filled?' filled':'')+(acq?' has-badge':'')+'" data-zone="bench" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
     if(filled){
       h+='<span class="st-name">'+esc(nm)+'</span>';
-      h+='<span class="st-price">'+(price?fN(price)+' cr':'—')+'</span>';
+      h+='<span class="st-price">'+(price?fN(price)+' cr <small style="color:var(--mut)">('+fD(pct,1)+'%)</small>':'—')+'</span>';
       if(badgeHtml) h+=badgeHtml;
     }else{
       h+='<span class="st-empty">'+role+'</span>';
@@ -2202,9 +2223,11 @@ function renderSquadEditor(){
   h+='<div class="sq-budget">';
   h+='<div class="budget-bar-wrap"><div class="budget-bar '+barCls+'" style="width:'+pct+'%"></div></div>';
   h+='<div class="budget-nums">';
-  h+='<span>Speso <b>'+fN(spent)+'</b></span>';
+  const spentPct=budget>0?(spent/budget*100):0;
+  h+='<span>Speso <b>'+fN(spent)+'</b> <small style="color:var(--mut)">('+fD(spentPct,1)+'%)</small></span>';
   h+='<span>Budget <b>'+fN(budget)+'</b></span>';
-  h+='<span>Residuo <b class="'+(remaining<0?'neg':'')+'">'+fN(remaining)+'</b></span>';
+  const remPct=budget>0?(remaining/budget*100):0;
+  h+='<span>Residuo <b class="'+(remaining<0?'neg':'')+'">'+fN(remaining)+'</b> <small style="color:var(--mut)">('+fD(remPct,1)+'%)</small></span>';
   h+='<span>Titolari <b>'+fieldFilled+'/'+sq.slots.length+'</b></span>';
   h+='<span>Panchina <b>'+benchFilled+'/'+btot+'</b></span>';
   h+='</div>';
@@ -2262,12 +2285,14 @@ function renderPickerList(){
   }
   players=players.slice(0,80);
   if(!players.length){box.innerHTML='<div class="picker-empty">Nessun giocatore trovato'+(S.listone.length?'':' · carica prima il listone')+'</div>';return;}
+  const budget=+S.config.crediti||500;
   box.innerHTML=players.map(p=>{
     const pp=getPP(p.n);
     const sel=cur===p.n;
     const isUsed=used.has(p.n.trim().toLowerCase());
     const note=p.note||'';
     const acq=acquired?acquired.get(p.n.trim().toLowerCase()):null;
+    const pct=budget>0?(pp/budget*100):0;
     let statusHtml='';
     if(acq){
       const priceInfo=acq.price?` (${fN(acq.price)} cr)`:'';
@@ -2282,7 +2307,7 @@ function renderPickerList(){
       +(note?'<span class="pi-note">'+esc(note)+'</span>':'')
       +'</span>'
       +statusHtml
-      +'<span class="pi-price">'+(pp?fN(pp)+' cr':'—')+'</span>'
+      +'<span class="pi-price">'+(pp?fN(pp)+' cr <small style="color:var(--mut)">('+fD(pct,1)+'%)</small>':'—')+'</span>'
       +'</div>';
   }).join('');
 }
