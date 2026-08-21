@@ -764,6 +764,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 <script>
 (()=>{'use strict';
 const LS='fanta10-asta-v5';
+const LS_UI='fanta10-asta-ui-v1'; /* preferenze UI: filtri, ordinamento, scroll */
 const ROLES=['P','D','C','A'];
 const RINFO={
   P:{lab:'Portieri',c:'#d4b876'},
@@ -823,6 +824,29 @@ function load(){
   }catch(e){return def();}
 }
 let S=load();
+
+/* ═══════════ CARICAMENTO PREFERENZE UI ═══════════ */
+function loadUIPrefs(){
+  try{
+    const raw=localStorage.getItem(LS_UI);
+    if(!raw) return {search:'',roleFilter:'',sort:'default',scrollY:0};
+    const p=JSON.parse(raw);
+    return {
+      search: p.search || '',
+      roleFilter: p.roleFilter || '',
+      sort: p.sort || 'default',
+      scrollY: +p.scrollY || 0
+    };
+  }catch(e){
+    return {search:'',roleFilter:'',sort:'default',scrollY:0};
+  }
+}
+
+function saveUIPrefs(prefs){
+  try{
+    localStorage.setItem(LS_UI, JSON.stringify(prefs));
+  }catch(e){}
+}
 
 const filled=r=>!!((r.n&&String(r.n).trim())||(+r.p>0));
 const nTeams=()=>Math.max(1,Math.min(MAXT,Math.trunc(+S.config.squadre)||1));
@@ -1282,6 +1306,54 @@ function importListoneXLSX(file){
 
 /* ═══════════ CARD SEARCH ═══════════ */
 let currentRoleFilter='';
+let currentSort='default';
+let uiPrefsLoaded=false;
+
+function initUIPrefs(){
+  if(uiPrefsLoaded) return;
+  const prefs=loadUIPrefs();
+  currentRoleFilter=prefs.roleFilter || '';
+  currentSort=prefs.sort || 'default';
+  
+  /* ripristina input ricerca */
+  const searchInput=$('#cardSearch');
+  if(searchInput && prefs.search){
+    searchInput.value=prefs.search;
+  }
+  
+  /* ripristina filtro ruolo attivo */
+  $$('.filter-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.role === currentRoleFilter);
+  });
+  
+  /* ripristina ordinamento selezionato */
+  const sortSelect=$('#cardSort');
+  if(sortSelect){
+    sortSelect.value=currentSort;
+  }
+  
+  /* ripristina scroll position dopo un breve delay per assicurarsi che il rendering sia completato */
+  setTimeout(()=>{
+    const cardDetails=$('#cardSearchDetails');
+    if(cardDetails && prefs.scrollY > 0){
+      cardDetails.scrollTop = prefs.scrollY;
+    }
+  }, 100);
+  
+  uiPrefsLoaded=true;
+}
+
+function persistUIPrefs(){
+  const searchInput=$('#cardSearch');
+  const cardDetails=$('#cardSearchDetails');
+  const prefs={
+    search: searchInput ? searchInput.value : '',
+    roleFilter: currentRoleFilter,
+    sort: currentSort,
+    scrollY: cardDetails ? cardDetails.scrollTop : 0
+  };
+  saveUIPrefs(prefs);
+}
 
 function computeCardStates(){
   const acquired=new Map();
@@ -1762,12 +1834,16 @@ function bindEvents(){
   });
 
   /* card search */
-  $('#cardSearch').addEventListener('input',e=>renderCardSearch(e.target.value,currentRoleFilter));
+  $('#cardSearch').addEventListener('input',e=>{
+    renderCardSearch(e.target.value,currentRoleFilter);
+    persistUIPrefs();
+  });
   $$('.filter-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       $$('.filter-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       currentRoleFilter=btn.dataset.role;
+      persistUIPrefs();
       renderCardSearch($('#cardSearch').value,currentRoleFilter);
     });
   });
@@ -1863,7 +1939,6 @@ function bindEvents(){
 }
 
 /* ═══ ordinamento card listone ═══ */
-let currentSort='default';
 function applySort(arr){
   const a=arr.slice();
   const ppOf=p=>{const v=parseFloat(p.pp);return isNaN(v)?null:v;};
@@ -1896,11 +1971,13 @@ function applySort(arr){
 }
 $('#cardSort').addEventListener('change',e=>{
   currentSort=e.target.value;
+  persistUIPrefs();
   renderCardSearch($('#cardSearch').value,currentRoleFilter);
 });
 
 bindConfig();
 fullRebuild();
+initUIPrefs(); /* ripristina preferenze UI (filtri, ordinamento, scroll) */
 bindEvents();
 /* ═══════════ SQUAD PREVIEW BUILDER (v2: panchina + note) ═══════════ */
 const MODULES={
