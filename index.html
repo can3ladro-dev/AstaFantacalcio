@@ -2251,7 +2251,7 @@ function openPicker(zone,idx){
   /* conta giocatori obiettivo per ruolo */
   const roleObi=(S.obi||[]).filter(o=>o.r===slot.role&&o.n&&o.n.trim()).length;
   const roleTot=arr.filter(s=>s.role===slot.role).length;
-  $('#pickerTitle').textContent=zl+' · slot '+(idx+1)+' · '+RINFO[slot.role].lab+(roleObi?' <small style="color:var(--green);font-weight:600">('+roleObi+'/'+roleTot+' obiettivo)</small>':'');
+  $('#pickerTitle').innerHTML=zl+' · slot '+(idx+1)+' · '+RINFO[slot.role].lab+(roleObi?' <small style="color:var(--green);font-weight:600">('+roleObi+'/'+roleTot+' obiettivo)</small>':'');
   $('#pickerSearch').value='';
   $('#pickerModal').hidden=false;
   renderPickerList();
