@@ -1444,7 +1444,7 @@ function renderCardSearch(query='',role=''){
     if(p.fvm) stats.push('<span class="card-stat">FVM <b>'+p.fvm+'</b></span>');
     const ppVal=p.pp||'';
     const ppPct=ppVal&&S.config.crediti>0?fD((+ppVal/S.config.crediti)*100,1):'';
-    stats.push('<span class="pp-inline"><label>MAX</label><input type="number" class="pp-input" data-key="'+esc(key)+'" min="0" step="1" placeholder="—" value="'+esc(ppVal)+'">'+(ppPct?'<span style="color:var(--mut);font-size:9px;margin-left:3px;font-family:var(--display);font-weight:700">'+ppPct+'%</span>':'')+'</span>');
+    stats.push('<span class="pp-inline"><label>MAX</label><input type="number" class="pp-input" data-key="'+esc(key)+'" min="0" step="1" placeholder="—" value="'+esc(ppVal)+'">'+(ppPct?'<span style="color:var(--mut);font-size:13px;margin-left:4px;font-family:var(--display);font-weight:600">'+ppPct+'%</span>':'')+'</span>');
 
     const cardKey=esc(key);
     const hasNote=!!p.note && p.note.trim()!=='';
