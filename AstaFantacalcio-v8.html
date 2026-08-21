@@ -241,6 +241,10 @@ td.slot-sem-red{color:#ffb5ae !important;font-weight:700}
 .card-status-badge{display:inline-flex;align-items:center;gap:3px;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 5px;border-radius:4px}
 .badge-me{background:rgba(76,207,122,.18);color:#9dffb9}
 .badge-other{background:rgba(233,243,236,.08);color:#94ab9d}
+.slot-badge{position:absolute;top:2px;right:2px;display:inline-flex;align-items:center;gap:2px;font-family:var(--display);font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:1px 4px;border-radius:3px;max-width:calc(100% - 4px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot-badge.badge-me{background:rgba(76,207,122,.22);color:#9dffb9}
+.slot-badge.badge-other{background:rgba(233,243,236,.1);color:#e9f3ec}
+.slot-token.has-badge .st-name{padding-right:6px}
 .badge-target{background:rgba(255,138,92,.18);color:#ffc9a6}
 .badge-manual{background:rgba(94,198,255,.15);color:#a6d4f5;font-size:9.5px;letter-spacing:1.5px}
 
@@ -1285,7 +1289,8 @@ function computeCardStates(){
     const k=String(r.n).trim().toLowerCase();
     if(!k)return;
     const teamIdx=Math.trunc(+r.da)||0;
-    acquired.set(k,{team:teamName(teamIdx),isMe:teamIdx===0});
+    const price=+r.p||0;
+    acquired.set(k,{team:teamName(teamIdx),isMe:teamIdx===0,price});
   });
   const targets=new Set();
   S.obi.forEach(o=>{
@@ -1345,8 +1350,8 @@ function renderCardSearch(query='',role=''){
     let badges='';
     if(p.manual) badges+='<span class="card-status-badge badge-manual">MANUALE</span>';
     if(acq){
-      if(acq.isMe) badges+='<span class="card-status-badge badge-me">✓ IN ROSA</span>';
-      else badges+='<span class="card-status-badge badge-other">⚠ '+esc(acq.team)+'</span>';
+      if(acq.isMe) badges+='<span class="card-status-badge badge-me">✓ IN ROSA <span style="opacity:.7;font-weight:400">('+fN(acq.price)+' cr)</span></span>';
+      else badges+='<span class="card-status-badge badge-other">⚠ '+esc(acq.team)+' <span style="opacity:.7;font-weight:400">('+fN(acq.price)+' cr)</span></span>';
     }
     if(isTarget) badges+='<span class="card-status-badge badge-target">🎯 OBIETTIVO</span>';
 
@@ -2012,14 +2017,23 @@ function renderSquadSelector(){
 }
 function renderPitchRow(sq,role,count){
   const off=roleOffset(sq.module,role);const ri=RINFO[role];
+  const showAsta=$('#btnToggleAstaInfo')?.classList.contains('active');
+  const{acquired}=showAsta?computeCardStates():{acquired:null};
   let h='<div class="pitch-row">';
   for(let i=0;i<count;i++){
     const slot=sq.slots[off+i];const nm=slot?slot.name:'';
     const filled=!!nm;const price=filled?getPP(nm):0;
-    h+='<button type="button" class="slot-token'+(filled?' filled':'')+'" data-zone="field" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
+    const acq=filled&&acquired?acquired.get(nm.trim().toLowerCase()):null;
+    let badgeHtml='';
+    if(acq){
+      const priceInfo=acq.price?` (${fN(acq.price)} cr)`:'';
+      badgeHtml=acq.isMe?'<span class="slot-badge badge-me">✓ '+esc(acq.team)+priceInfo+'</span>':'<span class="slot-badge badge-other">⚠ '+esc(acq.team)+priceInfo+'</span>';
+    }
+    h+='<button type="button" class="slot-token'+(filled?' filled':'')+(acq?' has-badge':'')+'" data-zone="field" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
     if(filled){
       h+='<span class="st-name">'+esc(nm)+'</span>';
       h+='<span class="st-price">'+(price?fN(price)+' cr':'—')+'</span>';
+      if(badgeHtml) h+=badgeHtml;
     }else{
       h+='<span class="st-empty">'+role+'</span>';
     }
@@ -2039,16 +2053,25 @@ function renderPitch(sq){
 }
 function renderBenchRow(sq,role,count){
   const off=benchRoleOffset(sq.module,role);const ri=RINFO[role];
+  const showAsta=$('#btnToggleAstaInfo')?.classList.contains('active');
+  const{acquired}=showAsta?computeCardStates():{acquired:null};
   let h='<div class="bench-row">';
   h+='<span class="bench-role" style="--rc:'+ri.c+'">'+role+'</span>';
   h+='<div class="bench-slots">';
   for(let i=0;i<count;i++){
     const slot=(sq.bench||[])[off+i];const nm=slot?slot.name:'';
     const filled=!!nm;const price=filled?getPP(nm):0;
-    h+='<button type="button" class="slot-token bench-token'+(filled?' filled':'')+'" data-zone="bench" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
+    const acq=filled&&acquired?acquired.get(nm.trim().toLowerCase()):null;
+    let badgeHtml='';
+    if(acq){
+      const priceInfo=acq.price?` (${fN(acq.price)} cr)`:'';
+      badgeHtml=acq.isMe?'<span class="slot-badge badge-me">✓ '+esc(acq.team)+priceInfo+'</span>':'<span class="slot-badge badge-other">⚠ '+esc(acq.team)+priceInfo+'</span>';
+    }
+    h+='<button type="button" class="slot-token bench-token'+(filled?' filled':'')+(acq?' has-badge':'')+'" data-zone="bench" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
     if(filled){
       h+='<span class="st-name">'+esc(nm)+'</span>';
       h+='<span class="st-price">'+(price?fN(price)+' cr':'—')+'</span>';
+      if(badgeHtml) h+=badgeHtml;
     }else{
       h+='<span class="st-empty">'+role+'</span>';
     }
@@ -2161,7 +2184,8 @@ function renderPickerList(){
     const acq=acquired?acquired.get(p.n.trim().toLowerCase()):null;
     let statusHtml='';
     if(acq){
-      statusHtml=acq.isMe?'<span class="pi-used" style="background:var(--green);color:#fff;">✓ '+esc(acq.team)+'</span>':'<span class="pi-used">⚠ '+esc(acq.team)+'</span>';
+      const priceInfo=acq.price?` (${fN(acq.price)} cr)`:'';
+      statusHtml=acq.isMe?'<span class="pi-used" style="background:var(--green);color:#fff;">✓ '+esc(acq.team)+priceInfo+'</span>':'<span class="pi-used">⚠ '+esc(acq.team)+priceInfo+'</span>';
     }else if(isUsed){
       statusHtml='<span class="pi-used">già in rosa</span>';
     }
@@ -2247,6 +2271,7 @@ $('#pickerClose').addEventListener('click',closePicker);
 $('#btnToggleAstaInfo').addEventListener('click',function(){
   this.classList.toggle('active');
   renderPickerList();
+  renderSquadEditor();
 });
 $('#pickerModal').addEventListener('click',e=>{
   if(e.target===$('#pickerModal')){closePicker();return;}
