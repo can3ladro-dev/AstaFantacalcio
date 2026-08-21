@@ -438,7 +438,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .picker-item:hover{border-color:var(--gold);background:#0f2318}
 .picker-item.selected{border-color:var(--green);background:rgba(76,207,122,.09)}
 .picker-item.used{opacity:.42;cursor:not-allowed}
-.picker-item.obi-target{border-color:var(--orange);background:rgba(255,138,92,.06)}
+.picker-item.obi-target{border-color:var(--orange)}
 .picker-item .pi-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
 .picker-item .pi-top{display:flex;align-items:center;gap:8px}
 .picker-item .pi-name{font-weight:600;color:var(--txt)}
@@ -2278,12 +2278,7 @@ function renderPickerList(){
   let players=S.listone
     .filter(p=>p.r===role)
     .filter(p=>!q||p.n.toLowerCase().includes(q)||(p.s||'').toLowerCase().includes(q))
-    .sort((a,b)=>{
-      /* prima gli obiettivo, poi per prezzo max decrescente */
-      const aObi=obiSet.has(a.n.trim().toLowerCase()),bObi=obiSet.has(b.n.trim().toLowerCase());
-      if(aObi&&!bObi)return -1;if(!aObi&&bObi)return 1;
-      return getPP(b.n)-getPP(a.n);
-    });
+    .sort((a,b)=>getPP(b.n)-getPP(a.n));
   /* garantisce che il giocatore già selezionato sia sempre nella lista (anche oltre le prime 80) */
   if(cur){
     const inTop=players.slice(0,80).some(p=>p.n===cur);
