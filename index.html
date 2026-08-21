@@ -1874,16 +1874,14 @@ function bindEvents(){
       $('#quickForm').scrollIntoView({behavior:'smooth',block:'center'});
       toast('✓ '+name+' pronto — inserisci crediti e squadra aggiudicataria');
     }else if(action==='target'){
-      const emptyIdx=S.obi.findIndex(o=>!o.n);
-      if(emptyIdx>=0){
-        S.obi[emptyIdx]={r:role,n:name,id:''};
-        const tr=$('#obiTable tbody tr[data-i="'+emptyIdx+'"]');
-        tr.querySelector('.ob-r').value=role; tr.querySelector('.ob-n').value=name;
-        scheduleAll();
-        toast('🎯 <b>'+esc(name)+'</b> aggiunto agli obiettivi');
-      }else{
-        toast('Lista obiettivi piena (40 righe)','warn');
-      }
+      let emptyIdx=S.obi.findIndex(o=>!o.n||!String(o.n).trim());
+      if(emptyIdx<0){emptyIdx=S.obi.length;S.obi.push({r:'',n:'',id:''});}
+      S.obi[emptyIdx]={r:role,n:name,id:''};
+      const tr=$('#obiTable tbody tr[data-i="'+emptyIdx+'"]');
+      if(tr){tr.querySelector('.ob-r').value=role; tr.querySelector('.ob-n').value=name;}
+      else{buildObi();}
+      scheduleAll();
+      toast('🎯 <b>'+esc(name)+'</b> aggiunto agli obiettivi');
     }
   });
 
