@@ -437,6 +437,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .picker-item:hover{border-color:var(--gold);background:#0f2318}
 .picker-item.selected{border-color:var(--green);background:rgba(76,207,122,.09)}
 .picker-item.used{opacity:.42;cursor:not-allowed}
+.picker-item.obi-target{border-color:var(--green);border-width:2px;background:rgba(76,207,122,.08);box-shadow:0 0 0 1px rgba(76,207,122,.15)}
 .picker-item .pi-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
 .picker-item .pi-top{display:flex;align-items:center;gap:8px}
 .picker-item .pi-name{font-weight:600;color:var(--txt)}
@@ -2245,7 +2246,10 @@ function openPicker(zone,idx){
   const slot=arr[idx];if(!slot)return;
   PICKER={zone,idx,role:slot.role};
   const zl=zone==='bench'?'Panchina':'Campo';
-  $('#pickerTitle').textContent=zl+' · slot '+(idx+1)+' · '+RINFO[slot.role].lab;
+  /* conta giocatori obiettivo per ruolo */
+  const roleObi=(S.obi||[]).filter(o=>o.r===slot.role&&o.n&&o.n.trim()).length;
+  const roleTot=arr.filter(s=>s.role===slot.role).length;
+  $('#pickerTitle').textContent=zl+' · slot '+(idx+1)+' · '+RINFO[slot.role].lab+(roleObi?' <small style="color:var(--green);font-weight:600">('+roleObi+'/'+roleTot+' obiettivo)</small>':'');
   $('#pickerSearch').value='';
   $('#pickerModal').hidden=false;
   renderPickerList();
@@ -2267,10 +2271,17 @@ function renderPickerList(){
   const q=($('#pickerSearch').value||'').trim().toLowerCase();
   const showAsta=$('#btnToggleAstaInfo')?.classList.contains('active');
   const{acquired}=showAsta?computeCardStates():{acquired:null};
+  /* costruisci set giocatori obiettivo */
+  const obiSet=new Set((S.obi||[]).filter(o=>o.n&&o.n.trim()).map(o=>o.n.trim().toLowerCase()));
   let players=S.listone
     .filter(p=>p.r===role)
     .filter(p=>!q||p.n.toLowerCase().includes(q)||(p.s||'').toLowerCase().includes(q))
-    .sort((a,b)=>getPP(b.n)-getPP(a.n));
+    .sort((a,b)=>{
+      /* prima gli obiettivo, poi per prezzo max decrescente */
+      const aObi=obiSet.has(a.n.trim().toLowerCase()),bObi=obiSet.has(b.n.trim().toLowerCase());
+      if(aObi&&!bObi)return -1;if(!aObi&&bObi)return 1;
+      return getPP(b.n)-getPP(a.n);
+    });
   /* garantisce che il giocatore già selezionato sia sempre nella lista (anche oltre le prime 80) */
   if(cur){
     const inTop=players.slice(0,80).some(p=>p.n===cur);
@@ -2290,6 +2301,7 @@ function renderPickerList(){
     const pp=getPP(p.n);
     const sel=cur===p.n;
     const isUsed=used.has(p.n.trim().toLowerCase());
+    const isObi=obiSet.has(p.n.trim().toLowerCase());
     const note=p.note||'';
     const acq=acquired?acquired.get(p.n.trim().toLowerCase()):null;
     const pct=budget>0?(pp/budget*100):0;
@@ -2299,8 +2311,10 @@ function renderPickerList(){
       statusHtml=acq.isMe?'<span class="pi-used" style="background:var(--green);color:#fff;">✓ '+esc(acq.team)+priceInfo+'</span>':'<span class="pi-used">⚠ '+esc(acq.team)+priceInfo+'</span>';
     }else if(isUsed){
       statusHtml='<span class="pi-used">già in rosa</span>';
+    }else if(isObi){
+      statusHtml='<span class="pi-used" style="background:var(--green);color:#fff;">🎯 OBIETTIVO</span>';
     }
-    return '<div class="picker-item'+(sel?' selected':'')+(isUsed&&!acq?' used':'')+'" data-name="'+esc(p.n)+'"'+(isUsed&&!acq?' data-disabled="1"':'')+' title="'+esc(note)+'">'
+    return '<div class="picker-item'+(sel?' selected':'')+(isUsed&&!acq?' used':'')+(isObi&&!acq&&!isUsed?' obi-target':'')+'" data-name="'+esc(p.n)+'"'+(isUsed&&!acq?' data-disabled="1"':'')+' title="'+esc(note)+'">'
       +'<span class="roltag" style="--rc:'+RINFO[role].c+'">'+role+'</span>'
       +'<span class="pi-body">'
       +'<span class="pi-top"><span class="pi-name">'+esc(p.n)+'</span><span class="pi-team">'+esc(p.s||'')+'</span></span>'
