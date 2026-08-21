@@ -437,7 +437,7 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .picker-item:hover{border-color:var(--gold);background:#0f2318}
 .picker-item.selected{border-color:var(--green);background:rgba(76,207,122,.09)}
 .picker-item.used{opacity:.42;cursor:not-allowed}
-.picker-item.obi-target{border-color:var(--green);border-width:2px;background:rgba(76,207,122,.08);box-shadow:0 0 0 1px rgba(76,207,122,.15)}
+.picker-item.obi-target{border-color:var(--orange);background:rgba(255,138,92,.06)}
 .picker-item .pi-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
 .picker-item .pi-top{display:flex;align-items:center;gap:8px}
 .picker-item .pi-name{font-weight:600;color:var(--txt)}
@@ -2312,7 +2312,7 @@ function renderPickerList(){
     }else if(isUsed){
       statusHtml='<span class="pi-used">già in rosa</span>';
     }else if(isObi){
-      statusHtml='<span class="pi-used" style="background:var(--green);color:#fff;">🎯 OBIETTIVO</span>';
+      statusHtml='<span class="pi-used" style="background:var(--orange);color:#fff;">🎯 OBIETTIVO</span>';
     }
     return '<div class="picker-item'+(sel?' selected':'')+(isUsed&&!acq?' used':'')+(isObi&&!acq&&!isUsed?' obi-target':'')+'" data-name="'+esc(p.n)+'"'+(isUsed&&!acq?' data-disabled="1"':'')+' title="'+esc(note)+'">'
       +'<span class="roltag" style="--rc:'+RINFO[role].c+'">'+role+'</span>'
