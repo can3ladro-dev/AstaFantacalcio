@@ -241,11 +241,11 @@ td.slot-sem-red{color:#ffb5ae !important;font-weight:700}
 .card-status-badge{display:inline-flex;align-items:center;gap:3px;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 5px;border-radius:4px}
 .badge-me{background:rgba(76,207,122,.25);color:#9dffb9;border:1px solid rgba(76,207,122,.4)}
 .badge-other{background:linear-gradient(135deg,rgba(255,138,92,.25),rgba(255,107,94,.28));color:#fff;border:1px solid rgba(255,107,94,.5);text-shadow:0 1px 2px rgba(0,0,0,.4)}
-.slot-badge{position:absolute;top:2px;right:2px;display:inline-flex;align-items:center;gap:2px;font-family:var(--display);font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:1px 4px;border-radius:3px;max-width:calc(100% - 4px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.slot-badge.badge-me{background:rgba(76,207,122,.28);color:#9dffb9;border:1px solid rgba(76,207,122,.45)}
-.slot-badge.badge-other{background:linear-gradient(135deg,rgba(255,138,92,.28),rgba(255,107,94,.32));color:#fff;border:1px solid rgba(255,107,94,.55);text-shadow:0 1px 2px rgba(0,0,0,.4)}
-.pitch-preview .slot-badge,.bench-wrap .slot-badge{font-size:13px;padding:6px 10px;top:50%;transform:translateY(-50%);right:6px;max-width:none}
-.pitch-preview .slot-token.has-badge .st-name,.bench-wrap .slot-token.has-badge .st-name{padding-right:80px}
+.slot-badge{position:absolute;top:4px;right:4px;display:inline-flex;align-items:center;gap:3px;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:none;padding:3px 6px;border-radius:5px;max-width:calc(100% - 8px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.slot-badge.badge-me{background:rgba(76,207,122,.22);color:#9dffb9;border:1px solid rgba(76,207,122,.38);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.slot-badge.badge-other{background:rgba(30,35,40,.85);color:#e8f3ec;border:1px solid rgba(255,255,255,.15);text-shadow:none;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.pitch-preview .slot-badge,.bench-wrap .slot-badge{font-size:10.5px;padding:3px 6px;top:4px;right:4px;max-width:calc(100% - 8px)}
+.pitch-preview .slot-token.has-badge .st-name,.bench-wrap .slot-token.has-badge .st-name{padding-right:0}
 .badge-target{background:rgba(255,138,92,.18);color:#ffc9a6}
 .badge-manual{background:rgba(94,198,255,.15);color:#a6d4f5;font-size:9.5px;letter-spacing:1.5px}
 
@@ -2027,8 +2027,12 @@ function renderPitchRow(sq,role,count){
     const acq=filled&&acquired?acquired.get(nm.trim().toLowerCase()):null;
     let badgeHtml='';
     if(acq){
-      const priceInfo=acq.price?` (${fN(acq.price)} cr)`:'';
-      badgeHtml=acq.isMe?'<span class="slot-badge badge-me">✓ '+esc(acq.team)+priceInfo+'</span>':'<span class="slot-badge badge-other">⚠ '+esc(acq.team)+priceInfo+'</span>';
+      const isMe=acq.isMe;
+      const teamName=esc(acq.team);
+      const priceInfo=acq.price?` · ${fN(acq.price)} cr`:'';
+      const badgeText=isMe?`✓ ${teamName}${priceInfo}`:`⚔ ${teamName}${priceInfo}`;
+      const badgeClass=isMe?'badge-me':'badge-other';
+      badgeHtml=`<span class="slot-badge ${badgeClass}">${badgeText}</span>`;
     }
     h+='<button type="button" class="slot-token'+(filled?' filled':'')+(acq?' has-badge':'')+'" data-zone="field" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
     if(filled){
@@ -2065,8 +2069,12 @@ function renderBenchRow(sq,role,count){
     const acq=filled&&acquired?acquired.get(nm.trim().toLowerCase()):null;
     let badgeHtml='';
     if(acq){
-      const priceInfo=acq.price?` (${fN(acq.price)} cr)`:'';
-      badgeHtml=acq.isMe?'<span class="slot-badge badge-me">✓ '+esc(acq.team)+priceInfo+'</span>':'<span class="slot-badge badge-other">⚠ '+esc(acq.team)+priceInfo+'</span>';
+      const isMe=acq.isMe;
+      const teamName=esc(acq.team);
+      const priceInfo=acq.price?` · ${fN(acq.price)} cr`:'';
+      const badgeText=isMe?`✓ ${teamName}${priceInfo}`:`⚔ ${teamName}${priceInfo}`;
+      const badgeClass=isMe?'badge-me':'badge-other';
+      badgeHtml=`<span class="slot-badge ${badgeClass}">${badgeText}</span>`;
     }
     h+='<button type="button" class="slot-token bench-token'+(filled?' filled':'')+(acq?' has-badge':'')+'" data-zone="bench" data-slot="'+(off+i)+'" style="--rc:'+ri.c+'">';
     if(filled){
