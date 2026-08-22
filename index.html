@@ -1807,7 +1807,6 @@ function bindEvents(){
     S.teams[+t.dataset.team]=t.value;
     refreshBuyers(); save();
     if(+t.dataset.team===0) $('#rosaName').textContent='Rosa '+(teamName(0)||'Io');
-    scheduleAll();
   });
   const ob=$('#obiTable');
   const obSync=e=>{
