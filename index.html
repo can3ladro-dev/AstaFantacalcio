@@ -1208,6 +1208,9 @@ function refreshObiCalc(){
         /* Salva l'aggiornamento solo se diverso da quello memorizzato */
         if(currentId!==o.id){
           S.obi[i].id=currentId;
+          /* Aggiorna anche l'input DOM per mostrare immediatamente il nuovo valore */
+          const idInput=tr.querySelector('.ob-id');
+          if(idInput)idInput.value=currentId;
         }
       }
     }
