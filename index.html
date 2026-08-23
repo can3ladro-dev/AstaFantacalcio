@@ -2446,9 +2446,24 @@ $('#squadSelect').addEventListener('change',e=>{
 $('#btnDelSquad').addEventListener('click',()=>{
   const sq=currentSquad();if(!sq)return;
   if(!confirm('Eliminare la squadra "'+sq.name+'"?'))return;
+  // Raccogli i nomi dei calciatori nella squadra
+  const players=[];
+  sq.slots.forEach(s=>{if(s.name)players.push(s.n||s.name);});
+  (sq.bench||[]).forEach(s=>{if(s.name)players.push(s.n||s.name);});
+  const playerNames=new Set(players.map(n=>n.trim().toLowerCase()));
+  // Chiedi se rimuovere anche dagli obiettivi
+  let removeObi=false;
+  if(playerNames.size>0){
+    removeObi=confirm('Rimuovere anche i '+playerNames.size+' calciatori di questa squadra dagli Obiettivi?');
+  }
   S.squads=S.squads.filter(s=>s.id!==sq.id);
   currentSquadId=S.squads.length?S.squads[0].id:null;
+  // Rimuovi calciatori dagli obiettivi se richiesto
+  if(removeObi&&playerNames.size>0){
+    S.obi=(S.obi||[]).filter(o=>!o.n||!playerNames.has(o.n.trim().toLowerCase()));
+  }
   save();renderSquadSelector();renderSquadEditor();
+  if(removeObi){buildObi();refreshObiCalc();}
 });
 const sqEd=$('#squadEditor');
 sqEd.addEventListener('input',e=>{
