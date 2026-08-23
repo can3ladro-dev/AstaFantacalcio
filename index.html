@@ -1374,6 +1374,7 @@ function importListoneXLSX(file){
 
 /* ═══════════ CARD SEARCH ═══════════ */
 let currentRoleFilter='';
+let currentTargetFilter=false;
 let currentSort='default';
 let uiPrefsLoaded=false;
 
@@ -1381,6 +1382,7 @@ function initUIPrefs(){
   if(uiPrefsLoaded) return;
   const prefs=loadUIPrefs();
   currentRoleFilter=prefs.roleFilter || '';
+  currentTargetFilter=prefs.targetFilter || false;
   currentSort=prefs.sort || 'default';
   
   /* ripristina input ricerca */
@@ -1391,7 +1393,12 @@ function initUIPrefs(){
   
   /* ripristina filtro ruolo attivo */
   $$('.filter-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.role === currentRoleFilter);
+    const role=btn.dataset.role;
+    if(role==='TARGET'){
+      btn.classList.toggle('active', currentTargetFilter);
+    }else{
+      btn.classList.toggle('active', role === currentRoleFilter);
+    }
   });
   
   /* ripristina ordinamento selezionato */
@@ -1417,6 +1424,7 @@ function persistUIPrefs(){
   const prefs={
     search: searchInput ? searchInput.value : '',
     roleFilter: currentRoleFilter,
+    targetFilter: currentTargetFilter,
     sort: currentSort,
     scrollY: cardDetails ? cardDetails.scrollTop : 0
   };
@@ -1462,8 +1470,10 @@ function renderCardSearch(query='',role=''){
   const matches=p=>{
     const okQ=!q||p.n.toLowerCase().includes(q)||(p.s&&p.s.toLowerCase().includes(q));
     let okR=true;
-    if(role==='TARGET')okR=targets.has(p.n.trim().toLowerCase());
-    else if(role)okR=p.r===role;
+    /* filtro obiettivi: se attivo, mostra solo i giocatori negli obiettivi */
+    if(currentTargetFilter && !targets.has(p.n.trim().toLowerCase())) return false;
+    /* filtro ruolo: se attivo (e non è TARGET), mostra solo il ruolo selezionato */
+    if(role && role!=='TARGET') okR=p.r===role;
     return okQ&&okR;
   };
   const preFiltered=S.listone.filter(matches);
@@ -1927,9 +1937,17 @@ function bindEvents(){
   });
   $$('.filter-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      $$('.filter-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentRoleFilter=btn.dataset.role;
+      const role=btn.dataset.role;
+      if(role==='TARGET'){
+        /* toggle filtro obiettivi */
+        currentTargetFilter=!currentTargetFilter;
+        btn.classList.toggle('active', currentTargetFilter);
+      }else{
+        /* filtro ruolo: comportamento esclusivo come prima */
+        $$('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        currentRoleFilter=role;
+      }
       persistUIPrefs();
       renderCardSearch($('#cardSearch').value,currentRoleFilter);
     });
