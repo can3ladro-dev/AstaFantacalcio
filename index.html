@@ -1518,6 +1518,7 @@ function bindCardLocalHandlers(){
     if(!p)return;
     p.pp=inp.value.trim();
     save();
+    refreshObiCalc();
   },true);
 
   grid.addEventListener('click',e=>{
@@ -1901,14 +1902,17 @@ function bindEvents(){
       $('#quickForm').scrollIntoView({behavior:'smooth',block:'center'});
       toast('✓ '+name+' pronto — inserisci crediti e squadra aggiudicataria');
     }else if(action==='target'){
+      const k=name.trim().toLowerCase();
+      const cardInListone=S.listone.find(p=>p.n.trim().toLowerCase()===k);
+      const ppVal=cardInListone&&cardInListone.pp?String(cardInListone.pp):'';
       let emptyIdx=S.obi.findIndex(o=>!o.n||!String(o.n).trim());
       if(emptyIdx<0){emptyIdx=S.obi.length;S.obi.push({r:'',n:'',id:''});}
-      S.obi[emptyIdx]={r:role,n:name,id:''};
+      S.obi[emptyIdx]={r:role,n:name,id:ppVal};
       const tr=$('#obiTable tbody tr[data-i="'+emptyIdx+'"]');
-      if(tr){tr.querySelector('.ob-r').value=role; tr.querySelector('.ob-n').value=name;}
+      if(tr){tr.querySelector('.ob-r').value=role; tr.querySelector('.ob-n').value=name; tr.querySelector('.ob-id').value=ppVal;}
       else{buildObi();}
       scheduleAll();
-      toast('🎯 <b>'+esc(name)+'</b> aggiunto agli obiettivi');
+      toast('🎯 <b>'+esc(name)+'</b> aggiunto agli obiettivi'+(ppVal?' con prezzo max '+ppVal:''));
     }
   });
 
