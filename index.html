@@ -155,6 +155,7 @@ td.sem-orange{background:rgba(255,138,92,.22) !important;color:#ffc9a6 !importan
 td.sem-orange b{color:#fff}
 td.sem-red{background:rgba(255,107,94,.28) !important;color:#ffb5ae !important;border-radius:6px}
 td.sem-red b{color:#fff}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.3px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.12);border:1px solid rgba(233,243,236,.25);color:var(--gold);margin-left:6px;min-width:26px;height:20px}
 td.slot-sem-green{color:#9dffb9 !important;font-weight:700}
 td.slot-sem-orange{color:#ffc9a6 !important;font-weight:700}
 td.slot-sem-red{color:#ffb5ae !important;font-weight:700}
@@ -953,6 +954,13 @@ function renderHeader(st){
 }
 function renderRiepilogo(st){
   const c=S.config,n=st.length;
+  
+  // Calcola ranking per crediti rimanenti
+  const ranking = st.map((row,t) => {
+    const rim = (+c.crediti||0) - row.sp;
+    return { idx: t, rim: rim };
+  }).sort((a,b) => b.rim - a.rim);
+  
   let h='<thead><tr><th class="rn">#</th><th style="min-width:170px">Partecipante</th><th>Crediti iniz.</th><th>Spesi</th><th style="width:150px">Ripartizione</th><th>Rimanenti</th>';
   ROLES.forEach(r=>h+='<th class="th-r" style="--tc:'+RINFO[r].c+'">Spesi '+r+'</th>');
   ROLES.forEach(r=>h+='<th class="th-r" style="--tc:'+RINFO[r].c+'">Liberi '+r+'</th>');
@@ -984,13 +992,14 @@ function renderRiepilogo(st){
       else if(crPerSlot>=8) semClass='sem-orange';
       else semClass='sem-red';
     }
+    const rankPos = ranking.findIndex(r => r.idx === t) + 1;
     h+='<tr class="'+(t===0?'me':'')+'">'+
       '<td class="rn">'+(t+1)+'</td>'+
       '<td class="name"><input class="team-in" data-team="'+t+'" value="'+esc(teamName(t))+'"></td>'+
       '<td class="num">'+fN(c.crediti)+'</td>'+
       '<td class="num"><b>'+fN(row.sp)+'</b> <small style="color:var(--mut)">('+fD(spentPct,1)+'%)</small></td>'+
       '<td><div class="sbar" style="padding:6px 10px">'+bar+'</div></td>'+
-      '<td class="num big '+(danger?'danger ':'')+semClass+'">'+fN(rim)+'</td>'+spC+libC+'</tr>';
+      '<td class="num big '+(danger?'danger ':'')+semClass+'">'+fN(rim)+' <span class="rank-badge">#'+rankPos+'</span></td>'+spC+libC+'</tr>';
   }
   const tot=st.reduce((a,t)=>a+t.sp,0);
   const totPct=((+c.crediti||0)*n)>0?(tot/((+c.crediti||0)*n)*100):0;
