@@ -1194,16 +1194,31 @@ function ensureObiRows(){
 function refreshObiCalc(){
   const pr=pressure();
   $$('#obiTable tbody tr').forEach(tr=>{
-    const o=S.obi[+tr.dataset.i]||{r:'',n:'',id:''};
+    const i=+tr.dataset.i;
+    const o=S.obi[i]||{r:'',n:'',id:''};
     const idx=tr.querySelector('.ob-idx'),bm=tr.querySelector('.ob-bm'),pc=tr.querySelector('.ob-pc');
     tr.className=''; if(ROLES.includes(o.r))tr.classList.add('role-'+o.r);
-    if(!ROLES.includes(o.r)||!(+o.id>0)){idx.textContent='—';bm.textContent='—';pc.textContent='—';bm.classList.remove('negc','posc');return;}
+    
+    /* Aggiorna automaticamente il prezzo max dal listone se il giocatore è presente */
+    let currentId=o.id;
+    if(o.n&&String(o.n).trim()){
+      const ppVal=getPP(o.n);
+      if(ppVal>0){
+        currentId=String(ppVal);
+        /* Salva l'aggiornamento solo se diverso da quello memorizzato */
+        if(currentId!==o.id){
+          S.obi[i].id=currentId;
+        }
+      }
+    }
+    
+    if(!ROLES.includes(o.r)||!(+currentId>0)){idx.textContent='—';bm.textContent='—';pc.textContent='—';bm.classList.remove('negc','posc');return;}
     const p=pr[o.r];
     idx.textContent=p.idx==null?'—':fD(p.idx,2);
     if(p.bm==null){bm.textContent='—';pc.textContent='—';bm.classList.remove('negc','posc');return;}
     bm.textContent=fPct(p.bm);
     bm.classList.toggle('negc',p.bm<0); bm.classList.toggle('posc',p.bm>0);
-    pc.textContent=fN(Math.max(1,Math.round((+o.id)*(1+p.bm))))+' cr';
+    pc.textContent=fN(Math.max(1,Math.round((+currentId)*(1+p.bm))))+' cr';
   });
 }
 
@@ -1335,6 +1350,7 @@ function importListoneXLSX(file){
       rebuildLu();renderCardSearch();save();
       toast('📋 Listone caricato: '+S.listone.length+' giocatori ('+added+' nuovi)');
       if(added>0) $('#listoneDetails').removeAttribute('open');
+      window.refreshObiPricesFromListone();
     }catch(err){
       console.error(err);
       toast('Errore nel parsing XLSX: '+err.message,'err');
@@ -1823,6 +1839,21 @@ function bindEvents(){
     refreshObiCalc(); save();
   };
   ob.addEventListener('input',obSync); ob.addEventListener('change',obSync);
+  
+  /* Quando si modifica il listone, aggiorna anche i prezzi negli obiettivi */
+  window.refreshObiPricesFromListone=function(){
+    (S.obi||[]).forEach((o,i)=>{
+      if(o.n&&String(o.n).trim()){
+        const ppVal=getPP(o.n);
+        if(ppVal>0&&ppVal!==+o.id){
+          S.obi[i].id=String(ppVal);
+        }
+      }
+    });
+    buildObi();
+    refreshObiCalc();
+    save();
+  };
 
   /* listone */
   $('#luImport').addEventListener('click',()=>{
@@ -1839,6 +1870,7 @@ function bindEvents(){
     arr.forEach(p=>{const k=p.n.trim().toLowerCase();if(!seen.has(k)){seen.add(k);S.listone.push(p);add++;}});
     rebuildLu();renderCardSearch();save();$('#luText').value='';
     toast('📋 Listone aggiornato: +'+add+' nuovi ('+S.listone.length+' totali)');
+    window.refreshObiPricesFromListone();
   });
   $('#luImportFile').addEventListener('click',()=>$('#luFile').click());
   $('#luFile').addEventListener('change',e=>{
@@ -1930,6 +1962,7 @@ function bindEvents(){
     rebuildLu();renderCardSearch($('#cardSearch').value,currentRoleFilter);save();
     form.reset();
     toast('➕ <b>'+esc(n)+'</b> aggiunto manualmente al listone');
+    window.refreshObiPricesFromListone();
   });
 
   $('#btnCsv').addEventListener('click',()=>{
