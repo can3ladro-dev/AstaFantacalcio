@@ -540,6 +540,13 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
         <div class="field"><label>Fattore di sensibilità</label><input id="cSens" type="number" min="0" max="1" step="0.05"></div>
         <span class="hint" id="sensLbl"></span>
         <span class="hint">Quanto l'indice di pressione sposta il prezzo consigliato: 0,5 = reazione al 50%.</span>
+        <div class="field" style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input id="cMostraNonPresenti" type="checkbox" style="width:18px;height:18px;accent-color:var(--gold)">
+            <span>Mostra giocatori "non più presenti"</span>
+          </label>
+          <span class="hint">Se disattivato, nasconde i giocatori non presenti nel listone attuale da tutte le viste (ricerca, picker, ecc.).</span>
+        </div>
       </div>
       <div class="cfg-card">
         <h3>Slot per ruolo</h3>
@@ -820,7 +827,7 @@ document.documentElement.style.setProperty('--col-C',RINFO.C.c);
 document.documentElement.style.setProperty('--col-A',RINFO.A.c);
 
 function def(){return{
-  config:{crediti:500,squadre:10,slot:{P:3,D:8,C:8,A:6},pesi:{P:5,D:15,C:30,A:50},sens:.5},
+  config:{crediti:500,squadre:10,slot:{P:3,D:8,C:8,A:6},pesi:{P:5,D:15,C:30,A:50},sens:.5,mostraNonPresenti:false},
   teams:Array.from({length:MAXT},(_,i)=>i?'Avversario '+i:'Io'),
   log:Array.from({length:LOGN},()=>({n:'',s:'',r:'',da:0,p:''})),
   obi:[],
@@ -842,7 +849,7 @@ function sanitizeObi(arr){
 function sanitizeListone(arr){return Array.isArray(arr)?arr.filter(x=>x&&x.n).map(x=>({
   n:String(x.n),s:r0(x.s),r:ROLES.includes(x.r)?x.r:'',
   qtA:+x.qtA||0,qtI:+x.qtI||0,fvm:+x.fvm||0,
-  pp:x.pp??'',note:r0(x.note),noteOpen:!!x.noteOpen,manual:!!x.manual
+  pp:x.pp??'',note:r0(x.note),noteOpen:!!x.noteOpen,manual:!!x.manual,presente:x.presente!==false
 })):[];}
 
 function load(){
@@ -1257,6 +1264,7 @@ function updSlotTot(){$('#slotTot').textContent=rosaTot()+' giocatori';}
 function syncConfigInputs(){
   const c=S.config;
   $('#cCrediti').value=c.crediti;$('#cSquadre').value=c.squadre;$('#cSens').value=c.sens;
+  $('#cMostraNonPresenti').checked=!!c.mostraNonPresenti;
   ROLES.forEach(r=>{$('#cSlot'+r).value=c.slot[r];$('#cPeso'+r).value=c.pesi[r];});
   updPesi();updSens();updSlotTot();
 }
@@ -1266,6 +1274,7 @@ function bindConfig(){
   $('#cCrediti').addEventListener('change',e=>{c.crediti=Math.max(1,Math.trunc(+e.target.value)||500);e.target.value=c.crediti;scheduleAll();});
   $('#cSquadre').addEventListener('change',e=>{c.squadre=Math.max(1,Math.min(MAXT,Math.trunc(+e.target.value)||10));e.target.value=c.squadre;refreshBuyers();scheduleAll();});
   $('#cSens').addEventListener('change',e=>{c.sens=Math.max(0,Math.min(1,+e.target.value||0));e.target.value=c.sens;updSens();scheduleAll();});
+  $('#cMostraNonPresenti').addEventListener('change',e=>{c.mostraNonPresenti=e.target.checked;renderCardSearch();buildPicker();save();});
   ROLES.forEach(r=>{
     $('#cSlot'+r).addEventListener('change',e=>{c.slot[r]=Math.max(0,Math.trunc(+e.target.value)||0);e.target.value=c.slot[r];updSlotTot();scheduleAll();});
     $('#cPeso'+r).addEventListener('input',e=>{c.pesi[r]=Math.max(0,+e.target.value||0);updPesi();scheduleAll();});
@@ -1331,8 +1340,13 @@ function importListoneXLSX(file){
       if(typeof XLSX==='undefined'){toast('Libreria XLSX non caricata, riprova tra un istante','err');return;}
       const data=new Uint8Array(e.target.result);
       const wb=XLSX.read(data,{type:'array'});
+      
+      /* ══ MARCA TUTTI I GIOCATORI ESISTENTI COME \"NON PIÙ PRESENTI\" ══ */
+      /* Prima di processare il nuovo file, segno tutti i giocatori esistenti come non presenti */
+      S.listone.forEach(p=>{ p.presente=false; });
+      
       let added=0;
-      const seen=new Set(S.listone.map(p=>p.n.trim().toLowerCase()));
+      let updated=0;
       for(const sn of wb.SheetNames){
         if(/ceduti/i.test(sn))continue; /* ignora i giocatori ceduti/usciti dalla Serie A */
         const ws=wb.Sheets[sn];
@@ -1351,16 +1365,38 @@ function importListoneXLSX(file){
           const qtI=+row[6]||0;
           const fvm=+row[11]||+row[10]||0;
           const key=name.trim().toLowerCase();
-          if(!seen.has(key)){
-            seen.add(key);
-            S.listone.push({n:name,s:team,r:role,qtA,qtI,fvm,pp:'',note:'',noteOpen:false,manual:false});
+          
+          /* Cerco se il giocatore esiste già */
+          const existing=S.listone.find(p=>p.n.trim().toLowerCase()===key);
+          if(existing){
+            /* Aggiorno i dati del giocatore esistente e lo marco come presente */
+            existing.s=team;
+            existing.r=role;
+            existing.qtA=qtA;
+            existing.qtI=qtI;
+            existing.fvm=fvm;
+            existing.presente=true;
+            updated++;
+          }else{
+            /* Nuovo giocatore: lo aggiungo marcato come presente */
+            S.listone.push({n:name,s:team,r:role,qtA,qtI,fvm,pp:'',note:'',noteOpen:false,manual:false,presente:true});
             added++;
           }
         }
       }
+      
+      /* Conto quanti giocatori sono stati marcati come \"non più presenti\" */
+      const nonPresenti=S.listone.filter(p=>p.presente===false).length;
+      
       if(!added && S.listone.length===0){toast('Nessun giocatore riconosciuto nel file XLSX','err');return;}
       rebuildLu();renderCardSearch();save();
-      toast('📋 Listone caricato: '+S.listone.length+' giocatori ('+added+' nuovi)');
+      
+      let msg='📋 Listone caricato: '+S.listone.length+' giocatori ('+added+' nuovi';
+      if(updated>0) msg+=', '+updated+' aggiornati';
+      if(nonPresenti>0) msg+=', '+nonPresenti+' non più presenti';
+      msg+=')';
+      toast(msg);
+      
       if(added>0) $('#listoneDetails').removeAttribute('open');
       window.refreshObiPricesFromListone();
     }catch(err){
@@ -1474,6 +1510,8 @@ function renderCardSearch(query='',role=''){
     if(currentTargetFilter && !targets.has(p.n.trim().toLowerCase())) return false;
     /* filtro ruolo: se attivo (e non è TARGET), mostra solo il ruolo selezionato */
     if(role && role!=='TARGET') okR=p.r===role;
+    /* filtro non presenti: se disattivato nel config, nasconde i giocatori non presenti */
+    if(!S.config.mostraNonPresenti && p.presente===false) return false;
     return okQ&&okR;
   };
   const preFiltered=S.listone.filter(matches);
@@ -2370,6 +2408,7 @@ function renderPickerList(){
   const obiSet=new Set((S.obi||[]).filter(o=>o.n&&o.n.trim()).map(o=>o.n.trim().toLowerCase()));
   let players=S.listone
     .filter(p=>p.r===role)
+    .filter(p=>!S.config.mostraNonPresenti||p.presente!==false)
     .filter(p=>!q||p.n.toLowerCase().includes(q)||(p.s||'').toLowerCase().includes(q))
     .sort((a,b)=>getPP(b.n)-getPP(a.n));
   /* garantisce che il giocatore già selezionato sia sempre nella lista (anche oltre le prime 80) */
