@@ -243,6 +243,8 @@ td.slot-sem-red{color:#ffb5ae !important;font-weight:700}
 .card-action-btn{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.8px;padding:4px 7px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--mut);cursor:pointer;transition:all .2s}
 .card-action-btn:hover{background:var(--gold);color:#241c04;border-color:var(--gold)}
 .card-action-btn.primary{background:var(--gold);color:#241c04;border-color:var(--gold)}
+.card-action-btn.danger{border-color:var(--red);color:var(--red);background:rgba(255,107,94,.12)}
+.card-action-btn.danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
 .card-empty{text-align:center;color:var(--mut);padding:32px 20px;font-style:italic;grid-column:1/-1}
 
 .player-card.acquired-me{border-left-color:var(--green);background:rgba(76,207,122,.06)}
@@ -1560,6 +1562,9 @@ function renderCardSearch(query='',role=''){
     else if(hasNote) noteHtml='<div class="note-preview" data-action="edit-note" data-key="'+cardKey+'" title="clicca per modificare">'+esc(p.note)+'</div>';
     else noteHtml='<button class="note-collapsed" data-action="open-note" data-key="'+cardKey+'">📝 + aggiungi nota</button>';
 
+    const targetBtnClass=isTarget?'card-action-btn danger':'card-action-btn';
+    const targetBtnLabel=isTarget?'❌ Rimuovi':'🎯 Obiettivo';
+
     return '<div class="player-card'+stateCls+'" style="--rc:'+ri.c+'" data-name="'+esc(p.n)+'" data-team="'+esc(p.s||'')+'" data-role="'+p.r+'" data-manual="'+(!!p.manual)+'">'+
       '<div class="card-top">'+
         '<div>'+
@@ -1573,7 +1578,7 @@ function renderCardSearch(query='',role=''){
       noteHtml+
       '<div class="card-actions">'+
         '<button class="card-action-btn primary" data-action="quick">⚖ Assegna</button>'+
-        '<button class="card-action-btn" data-action="target">🎯 Obiettivo</button>'+
+        '<button class="'+targetBtnClass+'" data-action="target">'+targetBtnLabel+'</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -2005,14 +2010,23 @@ function bindEvents(){
       const k=name.trim().toLowerCase();
       const cardInListone=S.listone.find(p=>p.n.trim().toLowerCase()===k);
       const ppVal=cardInListone&&cardInListone.pp?String(cardInListone.pp):'';
-      let emptyIdx=S.obi.findIndex(o=>!o.n||!String(o.n).trim());
-      if(emptyIdx<0){emptyIdx=S.obi.length;S.obi.push({r:'',n:'',id:''});}
-      S.obi[emptyIdx]={r:role,n:name,id:ppVal};
-      const tr=$('#obiTable tbody tr[data-i="'+emptyIdx+'"]');
-      if(tr){tr.querySelector('.ob-r').value=role; tr.querySelector('.ob-n').value=name; tr.querySelector('.ob-id').value=ppVal;}
-      else{buildObi();}
-      scheduleAll();
-      toast('🎯 <b>'+esc(name)+'</b> aggiunto agli obiettivi'+(ppVal?' con prezzo max '+ppVal:''));
+      const existingIdx=S.obi.findIndex(o=>o.n&&o.n.trim().toLowerCase()===k);
+      if(existingIdx>=0){
+        S.obi.splice(existingIdx,1);
+        if(S.obi.length===0||S.obi[S.obi.length-1].n||S.obi[S.obi.length-1].r)S.obi.push({r:'',n:'',id:''});
+        buildObi();
+        scheduleAll();
+        toast('🎯 <b>'+esc(name)+'</b> rimosso dagli obiettivi');
+      }else{
+        let emptyIdx=S.obi.findIndex(o=>!o.n||!String(o.n).trim());
+        if(emptyIdx<0){emptyIdx=S.obi.length;S.obi.push({r:'',n:'',id:''});}
+        S.obi[emptyIdx]={r:role,n:name,id:ppVal};
+        const tr=$('#obiTable tbody tr[data-i="'+emptyIdx+'"]');
+        if(tr){tr.querySelector('.ob-r').value=role; tr.querySelector('.ob-n').value=name; tr.querySelector('.ob-id').value=ppVal;}
+        else{buildObi();}
+        scheduleAll();
+        toast('🎯 <b>'+esc(name)+'</b> aggiunto agli obiettivi'+(ppVal?' con prezzo max '+ppVal:''));
+      }
     }
   });
 
