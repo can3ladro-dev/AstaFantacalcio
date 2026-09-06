@@ -1273,7 +1273,24 @@ function syncConfigInputs(){
 function bindConfig(){
   syncConfigInputs();
   const c=S.config;
-  $('#cCrediti').addEventListener('change',e=>{c.crediti=Math.max(1,Math.trunc(+e.target.value)||500);e.target.value=c.crediti;scheduleAll();});
+  $('#cCrediti').addEventListener('change',e=>{
+    const oldCrediti=c.crediti;
+    const newCrediti=Math.max(1,Math.trunc(+e.target.value)||500);
+    if(newCrediti!==oldCrediti && S.listone.length>0){
+      if(confirm('I crediti iniziali sono stati modificati da '+oldCrediti+' a '+newCrediti+'.\n\nVuoi aggiornare automaticamente tutti i prezzi max dei giocatori per preservare le percentuali attuali?\n\n(Esempio: un giocatore con prezzo max 50 su 500 crediti (10%) avrà prezzo max 60 su 600 crediti, mantenendo il 10%)')){
+        const ratio=newCrediti/oldCrediti;
+        S.listone.forEach(p=>{
+          if(p.pp && p.pp!==''){
+            const oldPP=+p.pp||0;
+            p.pp=Math.round(oldPP*ratio);
+          }
+        });
+        toast('✅ Prezzi max aggiornati in proporzione ai nuovi crediti');
+        rebuildLu();renderCardSearch();
+      }
+    }
+    c.crediti=newCrediti;e.target.value=c.crediti;scheduleAll();save();
+  });
   $('#cSquadre').addEventListener('change',e=>{c.squadre=Math.max(1,Math.min(MAXT,Math.trunc(+e.target.value)||10));e.target.value=c.squadre;refreshBuyers();scheduleAll();});
   $('#cSens').addEventListener('change',e=>{c.sens=Math.max(0,Math.min(1,+e.target.value||0));e.target.value=c.sens;updSens();scheduleAll();});
   $('#cMostraNonPresenti').addEventListener('change',e=>{c.mostraNonPresenti=e.target.checked;renderCardSearch();buildPicker();save();});
