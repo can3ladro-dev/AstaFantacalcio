@@ -349,25 +349,33 @@ td.slot-sem-red{color:#ffb5ae !important;font-weight:700}
 
 .rose-squadre{margin-top:20px}
 .rose-squadre h3{font-family:var(--display);font-size:18px;letter-spacing:1px;text-transform:uppercase;color:var(--sc);margin-bottom:10px;display:flex;align-items:center;gap:10px}
-.team-rosa-details{border:1px solid var(--line);border-radius:8px;background:var(--panel2);margin-bottom:6px;overflow:hidden}
-.team-rosa-details>summary{cursor:pointer;padding:10px 14px;font-family:var(--display);font-size:14px;letter-spacing:.8px;display:flex;justify-content:space-between;align-items:center;gap:10px;list-style:none;user-select:none;transition:background .2s;flex-wrap:wrap}
+.team-rosa-container{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin-top:14px}
+@media(max-width:1199px){.team-rosa-container{grid-template-columns:repeat(5,1fr)}}
+@media(max-width:768px){.team-rosa-container{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.team-rosa-container{grid-template-columns:1fr}}
+.team-rosa-details{border:1px solid var(--line);border-radius:8px;background:var(--panel2);margin-bottom:0;overflow:hidden;height:100%;display:flex;flex-direction:column}
+.team-rosa-details>summary{cursor:pointer;padding:10px 14px;font-family:var(--display);font-size:13px;letter-spacing:.6px;display:flex;justify-content:space-between;align-items:center;gap:10px;list-style:none;user-select:none;transition:background .2s;flex-wrap:wrap}
 .team-rosa-details>summary::-webkit-details-marker{display:none}
 .team-rosa-details>summary:hover{background:rgba(255,255,255,.03)}
-.team-rosa-details>summary .team-name{font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px}
-.team-rosa-details>summary .team-summary{font-family:var(--mono);font-size:11.5px;color:var(--mut);display:flex;gap:8px;flex-wrap:wrap}
-.team-rosa-details>summary .team-summary .role-count{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.04)}
+.team-rosa-details>summary .team-name{font-weight:700;color:var(--txt);display:flex;align-items:center;gap:8px;font-size:13px}
+.team-rosa-details>summary .team-summary{font-family:var(--mono);font-size:10px;color:var(--mut);display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.team-rosa-details>summary .team-summary .role-count{display:inline-flex;align-items:center;gap:3px;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.04);font-size:9.5px}
 .team-rosa-details>summary .team-summary .role-count b{color:var(--txt)}
 .team-rosa-details.me>summary{background:rgba(76,207,122,.08);border-left:3px solid var(--green)}
-.team-rosa-details-body{padding:10px 14px;border-top:1px solid var(--line);background:#0f1c16}
-.mini-rosa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
-.mini-rep{padding:6px 10px;border-left:3px solid var(--rc);background:rgba(255,255,255,.02);border-radius:4px}
-.mini-rep .mini-rep-head{font-family:var(--display);font-size:12px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between;color:var(--mut)}
-.mini-rep .mini-rep-head b{color:var(--rc)}
-.mini-rep ul{list-style:none;margin-top:4px;font-size:12px;font-family:var(--mono)}
-.mini-rep ul li{padding:2px 0;display:flex;justify-content:space-between;gap:8px}
+.team-rosa-details-body{padding:8px;border-top:1px solid var(--line);background:#0f1c16;flex:1}
+.mini-rosa-grid{display:grid;grid-template-columns:1fr;gap:6px}
+.mini-rep{border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.02);overflow:hidden}
+.mini-rep>summary{cursor:pointer;padding:6px 8px;font-family:var(--display);font-size:11px;letter-spacing:.8px;display:flex;justify-content:space-between;align-items:center;gap:8px;list-style:none;user-select:none;transition:background .2s;border-left:3px solid var(--rc);background:rgba(255,255,255,.03)}
+.mini-rep>summary::-webkit-details-marker{display:none}
+.mini-rep>summary:hover{background:rgba(255,255,255,.06)}
+.mini-rep[open]>summary{background:rgba(255,255,255,.08)}
+.mini-rep-head{font-family:var(--display);font-size:11px;letter-spacing:1px;text-transform:uppercase;display:flex;justify-content:space-between;color:var(--mut);align-items:center;gap:6px}
+.mini-rep-head b{color:var(--rc)}
+.mini-rep ul{list-style:none;margin:0;padding:6px 8px;font-size:11px;font-family:var(--mono);max-height:200px;overflow-y:auto}
+.mini-rep ul li{padding:2px 0;display:flex;justify-content:space-between;gap:6px}
 .mini-rep ul li .n{color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mini-rep ul li .p{color:var(--mut);flex-shrink:0}
-.mini-rep .mini-empty{color:#48584f;font-style:italic;font-size:11.5px;padding:3px 0}
+.mini-rep ul li .p{color:var(--mut);flex-shrink:0;font-size:10px}
+.mini-rep .mini-empty{color:#48584f;font-style:italic;font-size:10.5px;padding:3px 0}
 
 .press-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px;margin-bottom:20px}
 .pcard{border:1px solid var(--line);border-left:4px solid var(--rc);border-radius:10px;background:var(--panel2);padding:15px 17px}
@@ -1024,7 +1032,7 @@ function renderRoseSquadre(st){
   const c=S.config;
   const wrap=$('#roseSquadreWrap');
   if(!wrap)return;
-  let html='';
+  let html='<div class="team-rosa-container">';
   for(let t=0;t<st.length;t++){
     const mine=S.log.filter(r=>filled(r)&&(Math.trunc(+r.da)||0)===t);
     const isMe=t===0;
@@ -1036,18 +1044,19 @@ function renderRoseSquadre(st){
       summaryChips+='<span class="role-count" style="color:'+RINFO[r].c+'"><b>'+r+'</b> '+players.length+'/'+slot+'</span>';
       const list=players.length?players.map(x=>'<li><span class="n">'+esc(x.n)+'</span><span class="p">'+fN(x.p)+'</span></li>').join('')
         :'<li class="mini-empty">— nessuno —</li>';
-      bodyHtml+='<div class="mini-rep" style="--rc:'+RINFO[r].c+'">'+
-        '<div class="mini-rep-head"><span>'+RINFO[r].lab+'</span><b>'+players.length+'/'+slot+'</b></div>'+
-        '<ul>'+list+'</ul></div>';
+      bodyHtml+='<details class="mini-rep" style="--rc:'+RINFO[r].c+'" '+(isMe?'open':'')+'>'+
+        '<summary><span class="mini-rep-head"><span>'+RINFO[r].lab+'</span><b>'+players.length+'/'+slot+'</b></span></summary>' +
+        '<ul>'+list+'</ul></details>';
     }
     const crRim=(+c.crediti||0)-st[t].sp;
-    html+='<details class="team-rosa-details'+(isMe?' me':'')+'" data-team="'+t+'">'+
-      '<summary><span class="team-name">'+(isMe?'⭐ ':'')+esc(teamName(t))+'</span>'+
-        '<span class="team-summary">'+summaryChips+'<span class="role-count">cr <b>'+fN(crRim)+'</b></span></span>'+
-      '</summary>'+
-      '<div class="team-rosa-details-body"><div class="mini-rosa-grid">'+bodyHtml+'</div></div>'+
+    html+='<details class="team-rosa-details'+(isMe?' me':'')+'" data-team="'+t+'" '+(isMe?'open':'')+'>'+
+      '<summary><span class="team-name">'+(isMe?'⭐ ':'')+esc(teamName(t))+'</span>' +
+        '<span class="team-summary">'+summaryChips+'<span class="role-count">cr <b>'+fN(crRim)+'</b></span></span>' +
+      '</summary>' +
+      '<div class="team-rosa-details-body"><div class="mini-rosa-grid">'+bodyHtml+'</div></div>' +
     '</details>';
   }
+  html+='</div>';
   wrap.innerHTML=html;
 }
 function renderRosa(st){
