@@ -1044,7 +1044,7 @@ function renderRoseSquadre(st){
       summaryChips+='<span class="role-count" style="color:'+RINFO[r].c+'"><b>'+r+'</b> '+players.length+'/'+slot+'</span>';
       const list=players.length?players.map(x=>'<li><span class="n">'+esc(x.n)+'</span><span class="p">'+fN(x.p)+'</span></li>').join('')
         :'<li class="mini-empty">— nessuno —</li>';
-      bodyHtml+='<details class="mini-rep" style="--rc:'+RINFO[r].c+'" '+(isMe?'open':'')+'>'+
+      bodyHtml+='<details class="mini-rep" data-role="'+r+'" style="--rc:'+RINFO[r].c+'" open>' +
         '<summary><span class="mini-rep-head"><span>'+RINFO[r].lab+'</span><b>'+players.length+'/'+slot+'</b></span></summary>' +
         '<ul>'+list+'</ul></details>';
     }
@@ -2601,6 +2601,25 @@ $('#pickerRemove').addEventListener('click',()=>{
 });
 const sqTab=document.querySelector('.tab[data-view="view-squadre"]');
 if(sqTab)sqTab.addEventListener('click',()=>{renderSquadSelector();renderSquadEditor();});
+
+  /* ═══════════ GESTIONE COLLAPSE/EXPAND REPARTI NELLE ROSE SQUADRE ═══════════ */
+  const roseWrap=$("#roseSquadreWrap");
+  if(roseWrap){
+    roseWrap.addEventListener("click",e=>{
+      const rep=e.target.closest(".mini-rep>summary");
+      if(!rep)return;
+      e.preventDefault();
+      const details=rep.closest(".mini-rep");
+      if(!details)return;
+      const role=details.dataset.role;
+      if(!role)return;
+      const isClosing=!details.hasAttribute("open");
+      $$(".mini-rep[data-role=\+role+]").forEach(d=>{
+        if(isClosing)d.removeAttribute("open");
+        else d.setAttribute("open","");
+      });
+    });
+  }
 renderSquadSelector();renderSquadEditor();
 })();
 </script>
